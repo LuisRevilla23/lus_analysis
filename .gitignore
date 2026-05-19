@@ -1,0 +1,10 @@
+__pycache__/
+data/
+.venv/
+.venv_tf_infer/
+.venv_torch/
+.tmp_tf/
+.pip-cache-tf/
+outputs/
+logs/
+*.pt

@@ -1,48 +1,189 @@
-# LUS-Segmentation-RT
-![LUS_examples](https://github.com/ljhowell/LUS-Segmentation-RT/assets/55801295/c52841cd-e465-4658-8c13-89379fcadfca)
+# Engineering Analysis Results
 
-## Citation
-If you use this code, please cite the following paper:
+This repository contains the engineering analysis for a reproduced lung ultrasound
+(LUS) segmentation model and its downstream B-line Artefact Score (BLAS). The focus is
+whether segmentation masks are reliable enough to support BLAS as a portable,
+real-time severity metric.
 
-```
-Howell, L., Ingram, N., Lapham, R., Morrell, A., & McLaughlan, J. R. (2024). Deep learning for real-time multi-class segmentation of artefacts in lung ultrasound. Ultrasonics, 107251. https://doi.org/10.1016/j.ultras.2024.107251
-```
+## Core Question
 
-## Introduction
-Lung ultrasound (LUS) is a safe and cost-effective modality for assessing lung health. However, interpreting LUS images remains challenging due to its reliance on the interpretation of artefacts including A-lines and B-lines. We propose a U-Net deep learning model for multi-class segmentation of objects (ribs, pleural line) and artefacts (A-lines, B-lines, B-line confluence) in ultrasound images of a lung training phantom, suitable for real-time implementation.
+Can a reproduced LUS segmentation model support BLAS reliably, or do class-specific
+segmentation errors in B-line and confluence regions change the downstream severity
+score in clinically meaningful ways?
 
-![LUS_network_diagram](https://github.com/ljhowell/LUS-Segmentation-RT/assets/55801295/ac816aa4-72c5-49ee-8c3d-1c6f215ae3ac)
+## Reproduced Test-Set Segmentation
 
-This GitHub repository includes the code for training and evaluating the model as well as a demonstration of the BLAS - a semi quantitiative metric for assessing the area of the intercostal space occupied by B-lines. The phantom data is available at XXXX. 
+The analysis used the public phantom-frame split available in the local workspace:
 
-## Requirements:
-The code was developed using Ubuntu 20.04 (but has also been tested with Windows 10), CUDA 11.4, cuDNN 8.4.1 and models implemented in TensorFlow 2.9.1 for Python 3.9. 
+| Split | Images |
+| --- | ---: |
+| Training | 464 |
+| Test | 100 |
 
-It is recommended to use a GPU with at least 8GB of memory for training and evaluation.
+The TensorFlow/Keras model (`model_lus.h5`) was evaluated with the reproduction
+preprocessing pipeline: crop, resize to 256 x 256, grayscale normalization, and
+multiclass argmax masks for labels 0-5.
 
-## Installation
-The required python dependencies are given as a ```requirements.txt``` file or a ```Pipfile.lock``` and can be installed using pip3 or pipenv. 
+| Metric | Result |
+| --- | ---: |
+| Pixel accuracy | 0.958 |
+| Mean Dice excluding background | 0.701 |
+| Rib Dice | 0.777 |
+| Pleural line Dice | 0.791 |
+| A-line Dice | 0.660 |
+| B-line Dice | 0.633 |
+| B-line confluence Dice | 0.645 |
 
-If using pip3, the requirements can be installed using:
-```
-pip3 install -r requirements.txt
-```
-or if using pipenv, the requirements can be installed using:
-```
-pipenv install
-```
+## BLAS Agreement
 
-# Getting started
+BLAS was computed from manual masks and predicted masks, then compared on the 100-frame
+test set.
 
-The notebook ```LUS_Segmentation_RT.ipynb``` provides a step-by-step guide to training and evaluating the model and is the best place to start. The function ```train_model()``` in ```train_model.py``` can also be used to train the model and may be used for hyperparameter optimisation.
+| Metric | Result |
+| --- | ---: |
+| BLAS mean absolute error | 0.158 |
+| BLAS RMSE | 0.284 |
+| Bias, predicted minus manual | +0.060 |
+| Pearson correlation | 0.626 |
+| Spearman correlation | 0.595 |
+| Severity-category disagreement | 26/100 frames |
 
-For real-time implementation with an ultrasound machine, the script ```segement_lus_rt.py``` can be used to segment images in real-time. This script requires the ultrasound machine to be connected to the computer via a video capture card. 
+![Manual BLAS vs predicted BLAS](outputs/engineering_analysis/blas_scatter.png)
 
-https://github.com/ljhowell/LUS-Segmentation-RT/assets/55801295/68a7ab16-b983-42f3-bb42-04a6c2bc29f8
+![BLAS Bland-Altman analysis](outputs/engineering_analysis/blas_bland_altman.png)
 
+The model is useful but not reliable enough for unqualified BLAS severity scoring. A
+26% category-disagreement rate means downstream interpretation can change even when
+pixel-level segmentation performance looks acceptable.
 
+## Failure Cases
 
+The largest BLAS errors were dominated by false-positive B-line confluence in frames
+whose manual BLAS was low or zero.
 
+| Case | Manual BLAS | Predicted BLAS | Error | Category shift |
+| --- | ---: | ---: | ---: | --- |
+| S316-F39 | 0.000 | 0.969 | +0.969 | low to high |
+| S316-F78 | 0.000 | 0.962 | +0.962 | low to high |
+| S316-F66 | 0.000 | 0.956 | +0.956 | low to high |
+| S01-F12 | 0.000 | 0.937 | +0.937 | low to high |
+| S80-F19 | 0.980 | 0.267 | -0.713 | high to low |
 
+Example panels are stored in
+`outputs/engineering_analysis/failure_cases/`.
 
+## BLAS Sensitivity
 
+Controlled perturbations showed that BLAS is especially sensitive to the vertical extent
+of B-line and confluence masks.
+
+| Perturbation | Result |
+| --- | ---: |
+| Five iterations of B-line/confluence dilation | mean BLAS change +0.124 |
+| Five iterations of B-line/confluence erosion | mean BLAS change -0.171 |
+| Removing 50% of B-line/confluence pixels | mean BLAS change -0.189 |
+| Adding false-positive B-line pixels at level 0.064 | mean BLAS change +0.025 |
+
+![BLAS sensitivity curves](outputs/engineering_analysis/sensitivity_curves.png)
+
+This supports the central engineering conclusion: BLAS is interpretable, but its
+reliability depends strongly on robust segmentation of B-line and confluence morphology.
+
+## Conformal Uncertainty
+
+A lightweight conformal/uncertainty analysis used half of the test set for calibration
+and half for held-out evaluation.
+
+| Subset | Coverage / correlation result |
+| --- | --- |
+| All pixels | coverage 0.905; Spearman entropy vs BLAS error 0.195 |
+| Foreground pixels | Spearman entropy vs BLAS error 0.017 |
+| Manual BLAS ROI | Spearman entropy vs BLAS error 0.218 |
+| Manual B-line/confluence pixels | Spearman entropy vs BLAS error -0.027 |
+
+![Uncertainty vs BLAS error](outputs/engineering_analysis/uncertainty_vs_blas_error.png)
+
+Pixel-level uncertainty did not reliably identify frames with large downstream BLAS
+error. The global conformal result is close to the nominal 90% coverage target, but it is
+diluted by background pixels and does not solve BLAS-level reliability.
+
+## Portable Deployment Estimate
+
+| Platform assumption | FPS | Energy/frame | Estimated 50 Wh runtime |
+| --- | ---: | ---: | ---: |
+| Local CPU TensorFlow, 25 W | 6.82 | 3.67 J | 2.0 h |
+| Jetson-class 15 W, same latency | 6.82 | 2.20 J | 3.3 h |
+| 5 W edge accelerator at 10 FPS | 10.0 | 0.50 J | 10.0 h |
+| 3 W portable CPU at 1 FPS | 1.0 | 3.00 J | 16.7 h |
+
+Model size and compute:
+
+| Metric | Result |
+| --- | ---: |
+| Parameters | 7.86 million |
+| Estimated compute | 13.9 GMAC/frame |
+| Local TensorFlow inference | 0.147 s/frame |
+
+Portable inference appears technically plausible, but a deployable ultrasound system
+would need hardware-specific benchmarking, thermal testing, and integration testing with
+the scanner display pipeline.
+
+## Train-Test Similarity
+
+The leakage probe found no shared sequence IDs between train and test splits. However,
+the phantom domain remains visually redundant.
+
+| Similarity result | Count |
+| --- | ---: |
+| Shared train/test sequence IDs | 0 |
+| Test images with nearest-train cosine similarity >= 0.99 | 17/100 |
+| Test images with nearest-train cosine similarity >= 0.95 | 41/100 |
+
+![Train-test similarity histogram](outputs/engineering_analysis/train_test_similarity_hist.png)
+
+This does not prove leakage, but it suggests phantom test performance should be framed
+as controlled phantom reproducibility rather than evidence of clinical generalization.
+
+## Scaling-Law Experiment
+
+The scaling-law experiment completed all 105 planned runs: 7 training sizes x 3 model
+widths x 5 random seeds.
+
+| Training target | 0.5x width Dice | 1.0x width Dice | 1.5x width Dice |
+| ---: | ---: | ---: | ---: |
+| 32 | 0.164 | 0.411 | 0.512 |
+| 64 | 0.313 | 0.589 | 0.669 |
+| 128 | 0.538 | 0.691 | 0.690 |
+| 192 | 0.660 | 0.699 | 0.699 |
+| 256 | 0.700 | 0.703 | 0.702 |
+| 320 | 0.704 | 0.710 | 0.712 |
+| 370 | 0.710 | 0.712 | 0.710 |
+
+![Scaling-law curve](outputs/engineering_analysis/scaling_law_curve.png)
+
+Mean foreground Dice increases with training-set size and then plateaus near 0.71 by
+roughly 320-370 training images. Wider models help most in the low-data regime, but by
+the largest training sizes 1.0x and 1.5x models converge, suggesting the bottleneck is not
+only model capacity.
+
+## Main Conclusion
+
+The reproduced segmentation model is technically useful, but BLAS is more sensitive
+than pixel accuracy alone suggests. False-positive confluence and under-detected
+B-line/confluence morphology can shift BLAS severity categories. Before BLAS is treated
+as a portable decision-support metric, it needs prospective patient-level validation,
+scanner/acquisition robustness testing, clinically calibrated thresholds, and
+hardware-specific deployment measurements.
+
+## Key Output Files
+
+| Output | Purpose |
+| --- | --- |
+| `outputs/engineering_analysis/blas_agreement_summary.json` | BLAS agreement metrics |
+| `outputs/engineering_analysis/blas_agreement_cases.csv` | Per-frame BLAS target, prediction, and error |
+| `outputs/engineering_analysis/failure_cases/` | Top BLAS failure-case panels |
+| `outputs/engineering_analysis/sensitivity_summary.csv` | Aggregate perturbation results |
+| `outputs/engineering_analysis/conformal_blas_refined_summary.csv` | Localized uncertainty correlations |
+| `outputs/engineering_analysis/portable_energy_summary.json` | Model size, compute, and speed |
+| `outputs/engineering_analysis/train_test_similarity_summary.json` | Train-test similarity probe |
+| `outputs/engineering_analysis/scaling_law_summary_by_size.csv` | Scaling-law summary by size and width |

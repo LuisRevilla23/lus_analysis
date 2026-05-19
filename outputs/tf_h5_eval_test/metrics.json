@@ -1,0 +1,55 @@
+{
+  "pixel_accuracy": 0.9580194091796875,
+  "mean_dice_excluding_background": 0.701195190791241,
+  "classes": {
+    "0": {
+      "name": "Background",
+      "dice": 0.9787099103055386,
+      "iou": 0.958307458557968,
+      "support_pixels": 6089104
+    },
+    "1": {
+      "name": "Ribs",
+      "dice": 0.7767920107372779,
+      "iou": 0.6350449126852764,
+      "support_pixels": 42088
+    },
+    "2": {
+      "name": "Pleural line",
+      "dice": 0.791499533391182,
+      "iou": 0.6549435066518546,
+      "support_pixels": 28550
+    },
+    "3": {
+      "name": "A-line",
+      "dice": 0.6596929186908266,
+      "iou": 0.4921953542515477,
+      "support_pixels": 40435
+    },
+    "4": {
+      "name": "B-line",
+      "dice": 0.6330621731551423,
+      "iou": 0.4631243358129649,
+      "support_pixels": 200284
+    },
+    "5": {
+      "name": "B-line confluence",
+      "dice": 0.6449293179817762,
+      "iou": 0.47593776954957606,
+      "support_pixels": 153139
+    }
+  },
+  "n_samples": 100,
+  "weights": "model_lus.h5",
+  "split": "test",
+  "crop": [
+    100,
+    50,
+    850,
+    460
+  ],
+  "size": [
+    256,
+    256
+  ]
+}

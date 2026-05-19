@@ -1,0 +1,10 @@
+{
+  "n": 100,
+  "mae": 0.1576131553935448,
+  "rmse": 0.2835429219215067,
+  "bias_pred_minus_target": 0.06001316000789595,
+  "pearson_r": 0.6260011707687844,
+  "spearman_r": 0.5947914791479147,
+  "category_disagreement_count": 26,
+  "category_disagreement_fraction": 0.26
+}

@@ -1,0 +1,10 @@
+{
+  "alpha": 0.1,
+  "calibration_frames": 50,
+  "heldout_eval_frames": 50,
+  "probability_threshold": 0.9911817312240601,
+  "mean_pixel_coverage": 0.9052462768554688,
+  "mean_prediction_set_size": 0.9207586669921874,
+  "pearson_entropy_vs_blas_abs_error": 0.09242231843917909,
+  "spearman_entropy_vs_blas_abs_error": 0.19481392557022806
+}

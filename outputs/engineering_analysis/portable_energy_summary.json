@@ -1,0 +1,12 @@
+{
+  "model_parameters": 7858022,
+  "estimated_macs_per_frame": 13922992128,
+  "estimated_gmacs_per_frame": 13.922992128,
+  "measured_seconds_per_frame_local_tensorflow": 0.14671603666696076,
+  "measured_fps_local_tensorflow": 6.815887497492575,
+  "benchmark_image": "data\\frames\\test\\images\\Image62-F15.png",
+  "notes": [
+    "MAC estimate covers Conv2D and Conv2DTranspose layers only.",
+    "Portable-platform rows are engineering estimates; replace power/latency with hardware measurements if available."
+  ]
+}

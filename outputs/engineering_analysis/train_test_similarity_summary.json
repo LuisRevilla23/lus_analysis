@@ -1,0 +1,13 @@
+{
+  "n_train_images": 464,
+  "n_test_images": 100,
+  "n_train_sequences": 201,
+  "n_test_sequences": 47,
+  "shared_sequence_ids_count": 0,
+  "shared_sequence_ids": [],
+  "max_nearest_neighbor_cosine_similarity": 0.9999809861183167,
+  "median_nearest_neighbor_cosine_similarity": 0.9346955716609955,
+  "n_test_images_with_nn_similarity_ge_0_99": 17,
+  "n_test_images_with_nn_similarity_ge_0_97": 24,
+  "n_test_images_with_nn_similarity_ge_0_95": 41
+}

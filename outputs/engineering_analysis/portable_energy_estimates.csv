@@ -1,0 +1,5 @@
+platform,assumed_power_w,seconds_per_frame,fps,energy_j_per_frame,energy_wh_per_hour_continuous,runtime_hours_on_50wh_battery
+Laptop/desktop CPU measured here,25.0,0.14671603666696076,6.815887497492575,3.667900916674019,25.0,2.0
+"NVIDIA Jetson Orin Nano 15 W, assuming measured latency",15.0,0.14671603666696076,6.815887497492575,2.2007405500044115,15.0,3.3333333333333335
+"Edge accelerator 5 W, assuming 10 FPS",5.0,0.1,10.0,0.5,5.0,10.0
+"Portable CPU 3 W, assuming 1 FPS",3.0,1.0,1.0,3.0,3.0,16.666666666666668
